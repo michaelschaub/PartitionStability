@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Partition Stability by michaelschaub</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Partition Stability</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/michaelschaub/PartitionStability">View the Project on GitHub <small>michaelschaub/PartitionStability</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/michaelschaub/PartitionStability/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/michaelschaub/PartitionStability/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/michaelschaub/PartitionStability">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>Copyright (C) 2012 A. Delmotte, M. Schaub, S. Yaliraki, M. Barahona</p>
+
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU General Public License
+along with this program. If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+
+<hr><h2>Community Detection using the stability of a graph partition.</h2>
+
+<p>The code implements the stability method as introduced in the article</p>
+
+<p>(1) "Stability of graph communities across time scales" 
+Delvenne, J.-C.; Yaliraki, S. N. &amp; Barahona, M. 
+arXiv:0812.1811 (2009)
+and then published in 
+Proceedings of the National Academy of Sciences, 2010, 107, 12755-12760;</p>
+
+<p>and further expanded in:</p>
+
+<p>(2) "Laplacian Dynamics and Multiscale Modular Structure in Networks"
+Lambiotte, R.; Delvenne, J.-C. &amp; Barahona, M.
+arxiv:0812.1770 (2009)</p>
+
+<p>and</p>
+
+<p>(3) J.-C. Delvenne, M. T. Schaub, S. N. Yaliraki, and M. Barahona, 
+"The stability of a graph partition: A dynamics-based framework for community 
+detection" in Time Varying Dynamical Networks (N. Ganguly, A. Mukherjee, 
+M. Choudhury, F. Peruani, and B. Mitra, eds.), Birkhauser, Springer,
+2012. to be published.</p>
+
+<p>To optimize the stability quality function, we use the Louvain algorithm as 
+described in the publication:</p>
+
+<p>(4) "Fast unfolding of communities in large networks",
+Vincent D Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre,
+Journal of Statistical Mechanics: Theory and Experiment 2008 (10), P10008</p>
+
+<p>The folder  /demo/ contains three examples to demonstrate the main functionality 
+of the program:</p>
+
+<p>(i) demo.mat : A simple network with a multiscale community structure.<br>
+(ii) Protein_Adk.mat : A graph representation of the protein Adenylate Kinase 
+  (AdK) as described in</p>
+
+<p>(5) "Protein multi-scale organization through graph partitioning and robustness 
+analysis: application to the myosin–myosin light chain interaction"
+Delmotte, A.; Tate, E. W.; Yaliraki, S. N. &amp; Barahona, M. 
+Physical Biology, 2011, 8, 055010</p>
+
+<p>(ii) ring_of-rings.mat  : The "ring-of-rings" graph introduced in:</p>
+
+<p>(6) "Markov dynamics as a zooming lens for multiscale community detection: 
+non clique-like communities and the field-of-view limit"
+Schaub, M. T.; Delvenne, J.-C.; Yaliraki, S. N. &amp; Barahona, M. 
+PLoS ONE, Public Library of Science, 2012, 7, e32210</p>
+
+<p>Further example graphs are available on request. </p>
+
+<p><strong><em>If you make use of any part of this toolbox, please cite the 
+respective articles.</em></strong></p>
+
+<p>For detailed instructions on how to compile the code in MATLAB see below.
+If you find a bug or have further comments, please send an email and if 
+necessary the input file and the parameters that caused the error.</p>
+
+<hr><p>Authors   : A. Delmotte and M. Schaub<br>
+Email     : <a href="mailto:antoine.delmotte09@imperial.ac.uk">antoine.delmotte09@imperial.ac.uk</a>, <a href="mailto:michael.schaub09@imperial.ac.uk">michael.schaub09@imperial.ac.uk</a>  </p>
+
+<hr><hr><h2>Contributions to the code</h2>
+
+<p>The C++ code performing the stability optimization is based on the 
+implementation of the Louvain method as available from 
+<a href="http://sites.google.com/site/findcommunities/">http://sites.google.com/site/findcommunities/</a> 
+(Authors: Jean-Loup Guillaume / Etienne Lefebvre)</p>
+
+<p>The Louvain code was adapted and extended by R. Lambiotte 
+(<a href="http://www.lambiotte.be">http://www.lambiotte.be</a>) to allow for the optimization of the stability quality 
+function and was subsequently refined further by Antoine Delmotte. </p>
+
+<p>The MATLAB frontend was initally added by Antoine Delmotte. 
+Adjustments and additions, testing, and maintenance are due to 
+Antoine Delmotte and Michael Schaub.</p>
+
+<hr><h2>How to install the stability package</h2>
+
+<ol>
+<li><p>Open Matlab</p></li>
+<li>
+<p>Make sure you have a C++ compiler installed</p>
+
+<ul>
+<li>For Linux, you can find one here: 
+<a href="http://www.gnu.org/software/gcc/">http://www.gnu.org/software/gcc/</a>
+</li>
+<li>For Windows, you can use Visual C++ express: 
+<a href="http://www.microsoft.com/express/Windows/">http://www.microsoft.com/express/Windows/</a>
+</li>
+</ul>
+</li>
+<li>
+<p>Make sure mex is properly configured in Matlab:</p>
+
+<ul>
+<li>Type "mex -setup" in Matlab, and choose your compiler.</li>
+</ul>
+</li>
+<li><p>In Matlab, go into the directory of the Stability toolbox.</p></li>
+<li>
+<p>Type "Install_Stability" in the Matlab command window.</p>
+
+<ul>
+<li>
+<p>If you get an error message concerning the libstdc++.so file, 
+you may want to try the following manipulation:</p>
+
+<pre><code>cd "Matlab_root_directory"/sys/os/glnx86/
+sudo mv libgcc_s.so.1 libgcc_s.so.1.back
+sudo mv libstdc++.so.6 libstdc++.so.6.back
+</code></pre>
+</li>
+</ul>
+</li>
+<li><p>You will get a messge asking whether the stability toolbox should 
+be added to your Matlab path. Answering yes will allow you to use 
+the stability toolbox functions as standard Matlab functions.</p></li>
+<li><p>Type "help stability" in Matlab to discover how to use the code.</p></li>
+<li>
+<p>Try this example to check that everything is working:</p>
+
+<pre><code>cd('demo');
+load data;
+[S, N, VI, C] = stability(Graph,Time,'plot','v');
+</code></pre>
+</li>
+</ol><p>NOTES:</p>
+
+<ul>
+<li><p>The install script provides the option to add the bin folder to your 
+Matlab path. This will enable you to use stability as a standard Matlab 
+function from any directory. If you don't want this option any more,
+just remove it from the path by going in File/Set Path.</p></li>
+<li><p>If you get a warning message concerning savepath, and you want the 
+stability code to be in your path, go, after the installation, in 
+File/Set Path, and choose "save". Then choose where you want pathdef.m
+to be saved. If at the next matlab startup, you notice that stability is
+not in your matlab path anymore, try editing/creating the "startup.m" file
+from your matlab user folder (type userpath to know where it is located)
+and add the following line: addpath(' path to bin folder of stability 
+package '). Alternatively, if you are the only user on your machine, you
+can start matlab as a superuser ("sudo matlab" in linux) and rerun the
+"Install_Stability" script. This will permanently add the stability folder 
+in the path for all users.</p></li>
+<li>
+<p>To speed up the calculations, you might consider adding the
+option 'noVI'. This disables the calculation of the variation of information, 
+which is usually slow at small Markov times, when the number of 
+communities found is big. 
+Another option is to decrease the number of optimisations on which the variation 
+of information is calculated. To do so, add the option 'M' and put a value
+such that M &lt; L (L is the number of louvain optimisations).<br><em>Example:</em></p>
+
+<pre><code>[S, N, VI, C] = stability(Graph,time,'plot','v', 'L', 100, 'M', 10);
+</code></pre>
+</li>
+</ul>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/michaelschaub">michaelschaub</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
