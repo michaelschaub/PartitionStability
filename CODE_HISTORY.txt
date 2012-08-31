@@ -1,0 +1,6 @@
+######################################
+Version history and bugfixes
+######################################
+
+1.9.2012 - Version 1.0: 
+Release of the first public version of the stability MATLAB toolbox.
