@@ -137,8 +137,8 @@ How to install the stability package
 
 8. Try this example to check that everything is working:
     
-        cd('demo');
-        load data;
+        cd('demo');   % go into the demo directory (in the stability folder)
+        load demo;    % load data and then run stability
         [S, N, VI, C] = stability(Graph,Time,'plot','v');
 
 NOTES:
