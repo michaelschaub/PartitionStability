@@ -1,4 +1,3 @@
-
 #include "community.h"
 extern "C" {
 #include <math.h>
@@ -282,11 +281,6 @@ Graph Community::partition2graph_binary() {
 	return g2;
 }
 
-void display_t() {
-	time_t rawtime;
-	time(&rawtime);
-	cerr << ctime(&rawtime);
-}
 
 bool Community::one_level() {
 	bool improvement = false;
