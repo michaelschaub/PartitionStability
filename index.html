@@ -166,8 +166,8 @@ the stability toolbox functions as standard Matlab functions.</p></li>
 <li>
 <p>Try this example to check that everything is working:</p>
 
-<pre><code>cd('demo');
-load data;
+<pre><code>cd('demo');   % go into the demo directory (in the stability folder)
+load demo;    % load data and then run stability
 [S, N, VI, C] = stability(Graph,Time,'plot','v');
 </code></pre>
 </li>
@@ -196,10 +196,10 @@ which is usually slow at small Markov times, when the number of
 communities found is big. 
 Another option is to decrease the number of optimisations on which the variation 
 of information is calculated. To do so, add the option 'M' and put a value
-such that M &lt; L (L is the number of louvain optimisations).<br><em>Example:</em></p>
+such that M &lt; L (L is the number of louvain optimisations).<br>
+Example:</p>
 
-<pre><code>[S, N, VI, C] = stability(Graph,time,'plot','v', 'L', 100, 'M', 10);
-</code></pre>
+<p>[S, N, VI, C] = stability(Graph,time,'plot','v', 'L', 100, 'M', 10);</p>
 </li>
 </ul>
       </section>
