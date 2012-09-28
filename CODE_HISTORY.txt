@@ -4,3 +4,6 @@ Version history and bugfixes
 
 1.9.2012 - Version 1.0: 
 Release of the first public version of the stability MATLAB toolbox.
+28.9.2012 
+Removed unused small code segment in Normalised/community.cpp that could lead to 
+compilation errors in Windows
