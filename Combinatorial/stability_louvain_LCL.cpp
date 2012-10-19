@@ -50,6 +50,8 @@ int gettimeofday (struct timeval *tp, void *tz)
 
 #ifdef __lin__
 #include <sys/time.h>
+#include <unistd.h>
+#include <sys/types.h> 
 #endif
 
 #ifdef __MAC__
