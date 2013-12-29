@@ -10,4 +10,4 @@ compilation errors in Windows.
 19.10.2012
 Added some header files that can be required for some Linux systems.
 29.12.2013
-Added some header files that can be required for Mac Users.
+Added some header files that can be required for Mac Users (Thanks to Adrien Fallou (afallou)).
