@@ -6,6 +6,8 @@ Version history and bugfixes
 Release of the first public version of the stability MATLAB toolbox.
 28.9.2012 
 Removed unused small code segment in Normalised/community.cpp that could lead to 
-compilation errors in Windows
+compilation errors in Windows.
 19.10.2012
-Added some header files that can be required for some Linux systems
+Added some header files that can be required for some Linux systems.
+29.12.2013
+Added some header files that can be required for Mac Users.
