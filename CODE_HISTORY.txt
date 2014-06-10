@@ -9,3 +9,6 @@ Removed unused small code segment in Normalised/community.cpp that could lead to
 compilation errors in Windows
 19.10.2012
 Added some header files that can be required for some Linux systems
+
+25.6.2013 - Version 2.0
+New version including ability to treat directed graph
