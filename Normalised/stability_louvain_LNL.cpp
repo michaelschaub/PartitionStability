@@ -57,6 +57,8 @@ int gettimeofday (struct timeval *tp, void *tz)
 
 #ifdef __MAC__
 #include <sys/time.h>
+#include <unistd.h>
+#include <sys/types.h> 
 #endif
 
 using namespace std;
