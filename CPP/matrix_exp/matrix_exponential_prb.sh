@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-g++ -c -g -I/$HOME/include matrix_exponential_prb.cpp >& compiler.txt
+g++ -c -g -I/. >& compiler.txt
 if [ $? -ne 0 ]; then
   echo "Errors compiling matrix_exponential_prb.cpp"
   exit
