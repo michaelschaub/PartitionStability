@@ -1,0 +1,5 @@
+Matrix Exponential Source Code as distributed at
+
+http://people.sc.fsu.edu/~jburkardt/cpp_src/matrix_exponential/matrix_exponential.html
+
+under the GNU LGPL license.
