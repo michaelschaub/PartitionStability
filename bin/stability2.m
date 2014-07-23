@@ -103,7 +103,6 @@ function [S, N, VI, C] = stability2(G, T, varargin)
 %
 
 
-%TODO: fix adjacency list issue in directed graphs, linearised
 
 % Unparsed default parameters
 Graph = [];                                     % List of edges of the graph to be partitioned
