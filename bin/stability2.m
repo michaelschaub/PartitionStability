@@ -103,6 +103,7 @@ function [S, N, VI, C] = stability2(G, T, varargin)
 %
 
 
+%TODO: fix adjacency list issue in directed graphs, linearised
 
 % Unparsed default parameters
 Graph = [];                                     % List of edges of the graph to be partitioned
@@ -542,8 +543,8 @@ if PARAMS.precomputed == false
             * ones(PARAMS.NbNodes)/PARAMS.NbNodes;
         
         clear Dout dangling
-        [v lambda_all] = eigs(M'); % largest eigenvalue of transition matrix corresponds to stat.distribution.
-        lambda = max(diag(lambda_all));
+        [v, lambda_all] = eigs(M'); % largest eigenvalue of transition matrix corresponds to stat.distribution.
+        lambda = max(diag(real(lambda_all)));
         v = v(:,diag(lambda_all) == lambda);
         v = abs(v);              % make sure eigenvector is positive
         clear lambda;
@@ -811,8 +812,8 @@ if PARAMS.directed == true
             * ones(PARAMS.NbNodes)/PARAMS.NbNodes;
         
         clear Dout dangling
-        [v lambda_all] = eigs(M'); % largest eigenvalue of transition matrix corresponds to stat.distribution.
-        lambda = max(diag(lambda_all));
+        [v, lambda_all] = eigs(M'); % largest eigenvalue of transition matrix corresponds to stat.distribution.
+        lambda = max(diag(real(lambda_all)));
         v = v(:,diag(lambda_all) == lambda);
         v = abs(v);              % make sure eigenvector is positive
         clear lambda;
@@ -929,7 +930,7 @@ function Graph = check(Graph, verbose, PARAMS)
     end
 
     % Check for isolated nodes
-    if nnz(sum(Graph))~=size(Graph,2)
+    if ( nnz(sum(Graph))~=size(Graph,1) || nnz(sum(Graph,2))~=size(Graph,2) )
         warning('There are isolated nodes in the graph');
     end
     
