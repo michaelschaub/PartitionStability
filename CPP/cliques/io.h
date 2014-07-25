@@ -13,8 +13,8 @@ namespace clq {
 
 //============================================================================================
 // PRINT_MATRIX
-// Template to print out linear (array/vector) in "matrix" format assuming column first 
-// ordering, i.e., A(i,j) corresponds to matrix[i+j*N], where N is the dimension of the matrix
+// Template to print out linear (array/vector) in "matrix" format assuming row first ordering, 
+// i.e., A(i,j) corresponds to matrix[i+j*N], where N is the dimension of the matrix.
 // 
 // INPUTS:  matrix -- linear container (array/vector)
 //          lda -- dimension of the matrix
