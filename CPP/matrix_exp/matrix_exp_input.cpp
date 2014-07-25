@@ -23,13 +23,9 @@ int main(int argc, char *argv []){
     int size = std::sqrt(A.size()); 
     std::cout << size << std::endl;
     
-    for(int i=0;i<size*size;++i){
-        std::cout << A[i] << std::endl;
-    }
-    
     double* Adj;
     Adj = &A[0];
-    r8mat_print(size, size, Adj, "INPUT");
+    //r8mat_print(size, size, Adj, "INPUT");
 
     double* result = r8mat_expm1(size, Adj);
     r8mat_print(size,size,result, "RESULT");
