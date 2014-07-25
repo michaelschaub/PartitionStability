@@ -24,7 +24,7 @@ int main(int argc, char *argv []) {
     }
     std::cout << "TIME: "<< input_time << std::endl;
 
-    std::vector<double> result = clq::exp(A,input_time,2);
+    std::vector<double> result = clq::exp(A,input_time,size);
     clq::print_matrix(result,size);
 
     return 0;
