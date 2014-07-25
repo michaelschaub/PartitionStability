@@ -1,21 +1,18 @@
-# include <cstdlib>
-# include <iostream>
-# include <cmath>
-# include <complex>
+# include <vector>
+# include "../cliques/math.h"
+# include "../cliques/io.h"
 
-using namespace std;
-
-# include "matrix_exponential.hpp"
-# include "c8lib.hpp"
-# include "r8lib.hpp"
 
 int main(){
 
     // Note that matrix has to be stored column first order, i.e. A(i,j) becomes A[i+N*j]
-    double A[2*2]= {1.0, 1.0, 0.0, 2.0 };
-    r8mat_print(2,2,A,"INPUT");
+    double a[2*2]= {1.0, 1.0, 0.0, 2.0 };
+    std::vector<double> A (a,a+sizeof(a)/sizeof(double) );
+    clq::print_matrix(A,2);
+    
+    double time = 1.0;
 
-    double* result = r8mat_expm1(2, A);
-    r8mat_print(2,2,result, "RESULT");
+    std::vector<double> result = clq::exp(A,time,2);
+    clq::print_matrix(result,2);
     return 0;
 }

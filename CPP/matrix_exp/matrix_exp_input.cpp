@@ -1,38 +1,31 @@
-# include <cstdlib>
-# include <iostream>
+# include <vector>
 # include <cmath>
-# include <complex>
+# include "../cliques/math.h"
+# include "../cliques/io.h"
 
-#include "io.h"
-
-
-using namespace std;
-
-# include "matrix_exponential.hpp"
-# include "c8lib.hpp"
-# include "r8lib.hpp"
-
-
-
-
+// function to compute the matrix exponential given an input adjacency list
+// comment out print statements as necessary
 int main(int argc, char *argv []){
-
     
     // create adjacency matrix in vectorised form
     std::vector<double> A = clq::read_edgelist_weighted(argv[1]);
     int size = std::sqrt(A.size()); 
-    std::cout << size << std::endl;
-    
-    for(int i=0;i<size*size;++i){
-        std::cout << A[i] << std::endl;
-    }
-    
-    double* Adj;
-    Adj = &A[0];
-    r8mat_print(size, size, Adj, "INPUT");
+    std::cout << "MATRIX SIZE: " << size << std::endl;
 
-    double* result = r8mat_expm1(size, Adj);
-    r8mat_print(size,size,result, "RESULT");
+    std::cout << "INPUT MATRIX" << std::endl;
+    clq::print_matrix(A,size);
+    
+    double input_time;
+    if (argc < 3)
+    {
+        input_time = 1.0;
+    } else {
+        input_time = std::atof(argv[2]);
+    }
+    std::cout << "TIME: "<< input_time << std::endl;
+    
+    std::vector<double> result = clq::exp(A,input_time,2);
+    clq::print_matrix(result,size);
     
     return 0;
 }

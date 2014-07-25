@@ -11,7 +11,7 @@ extern "C" void dgpadm_(int* ideg, int* m, double* t, double* A, int* ldh,
 namespace clq {
 
 std::vector<double> exp(std::vector<double> matrix, double t, int order) {
-    int ideg = 6;
+    int ideg = 13;
     int m = order;
 
     int lda = order;
@@ -24,7 +24,6 @@ std::vector<double> exp(std::vector<double> matrix, double t, int order) {
 
     // output
     int iexp, ns, iflag;
-    //TODO: This does not work with MATLAB! But no idea why!
     dgpadm_(&ideg, &m, &t, A, &lda, wsp, &lwsp, iwsp, &iexp, &ns, &iflag);
 
     double *start = wsp + iexp -1;

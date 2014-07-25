@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <stdlib.h>
 #include <string>
@@ -9,6 +10,29 @@
 
 namespace clq {
 
+
+//============================================================================================
+// PRINT_MATRIX
+// Template to print out linear (array/vector) in "matrix" format assuming column first 
+// ordering, i.e., A(i,j) corresponds to matrix[i+j*N], where N is the dimension of the matrix
+// 
+// INPUTS:  matrix -- linear container (array/vector)
+//          lda -- dimension of the matrix
+//============================================================================================
+template <typename T>
+void print_matrix(T matrix, int lda) {
+    for (int i=0; i<lda; ++i) {
+        for (int j=0; j<lda; ++j) {
+            std::cout << matrix[j+i*lda] << "\t";
+        }
+        std::cout << std::endl;
+    } 
+    std::cout << std::endl;
+}
+
+
+
+//TODO WRITE DESCRIPTION
 std::vector<double> read_edgelist_weighted(std::string filename) {
     // initialise input stream and strings for readout
     std::ifstream my_file(filename.c_str());
@@ -55,16 +79,17 @@ std::vector<double> read_edgelist_weighted(std::string filename) {
     // don't forget to close file after readout...
     my_file.close();
     
-    // now write adjecency matrix in vector form (column first ordering)
+    // now write adjecency matrix in vector form (row first ordering)
     std::vector<double> Adj((max_node_id_seen+1)*(max_node_id_seen+1),0);
     for (unsigned int i =0; i<to.size(); i++){
-        int index = from[i]+(max_node_id_seen+1)*to[i];
+        int index = from[i]*(max_node_id_seen+1)+to[i];
         Adj[index] = weight[i];
     }
     
     return Adj;
 }
 
+//TODO WRITE DESCRIPTION
 template<typename G, typename E>
 bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
     // initialise input stream and strings for readout
@@ -125,7 +150,7 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
 }
 
 
-
+//TODO WRITE DESCRIPTION
 template<typename G, typename E>
 void write_edgelist_weighted(std::string filename, G &graph, E &weights) {
     // initialise input stream and strings for readout
