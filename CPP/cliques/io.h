@@ -141,9 +141,9 @@ void write_edgelist_weighted(std::string filename, G &graph, E &weights) {
     for(typename G::EdgeIt e(graph); e!=lemon::INVALID; ++e){
         int node1 = graph.id(graph.u(e));
         int node2 = graph.id(graph.v(e));
-        double weigth = weights[e];
+        double weight = weights[e];
 
-        my_file << node1 << " " << node2 << " " << weigth << "\n";
+        my_file << node1 << " " << node2 << " " << weight << "\n";
     }
 
     my_file.close();
