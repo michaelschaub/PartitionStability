@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <lemon/smart_graph.h>
-
+#include <time.h>
 #include "graphhelpers.h"
 #include "linearised_internals_generic.h"
 
