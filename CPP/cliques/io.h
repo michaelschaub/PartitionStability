@@ -9,7 +9,7 @@
 #include <map>
 
 namespace clq {
-
+//TODO: OPEN ISSUE -- formatting of prints; how many digits etc -- also relevant for output files..
 
 //============================================================================================
 // PRINT_MATRIX
@@ -149,10 +149,32 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
     return true;
 }
 
+//TODO WRITE DESCRIPTION
+void write_adj_matrix(std::string filename, std::vector<double> matrix) {
+    // initialise input stream and strings for readout
+    std::ofstream my_file(filename.c_str()); 
+
+    // check if file is open
+    if (!my_file.is_open()) {
+        std::cout << "couldn't open file" << std::endl;
+        exit(1);
+    }
+    int lda = std::sqrt(matrix.size());
+
+    for (int i=0; i<lda; ++i) {
+        for (int j=0; j<lda; ++j) {
+            my_file << matrix[j+i*lda] << "\t";
+        }
+        my_file << "\n";
+    } 
+    my_file << "\n";
+    my_file.close();
+
+}
 
 //TODO WRITE DESCRIPTION
 template<typename G, typename E>
-void write_edgelist_weighted(std::string filename, G &graph, E &weights) {
+void write_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
     // initialise input stream and strings for readout
     std::ofstream my_file(filename.c_str()); 
     std::string mystring;

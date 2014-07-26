@@ -9,15 +9,18 @@ CFLAGS=-O3 -std=c++0x
 FFLAGS=-O3
 #-Wall
 
-all: matrix_exp_input matrix_exp_test
+all: matrix_exp_input matrix_exp_input_test matrix_exp_test
 	
-matrix_exp_input:
+matrix_exp_input: expokit.o
 	$(CC) $(CFLAGS) matrix_exp_input.cpp expokit.o -lgfortran -lblas -llapack -o matrix_exp_input.sh
+
+matrix_exp_input_test: expokit.o
+	$(CC) $(CFLAGS) matrix_exp_input_test.cpp expokit.o -lgfortran -lblas -llapack -o matrix_exp_input_test.sh
 
 matrix_exp_test:
 	$(CC) $(CFLAGS) matrix_exp_test.cpp expokit.o -lgfortran -lblas -llapack -o matrix_exp_test.sh 
 
-expokit.o:
+expokit.o: 
 	$(CF) $(FFLAGS) -c ../../FORTRAN/expokit.f
 
 clean:
