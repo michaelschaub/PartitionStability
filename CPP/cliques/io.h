@@ -9,13 +9,32 @@
 #include <map>
 
 namespace clq {
-//TODO: OPEN ISSUE -- formatting of prints; how many digits etc -- also relevant for output files..
+//Variadic template for generic output ala printf();
+//as variadic templates are recursive, must have a base case
+void output() {
+    std::cout << '\n';
+}
 
+//Output function to output any type without type specifiers like printf() family
+template <typename T, typename ...P>
+void output(T t, P ...p)
+{
+    std::cout << t << ' ';
+    if (sizeof...(p)) {
+        output(p...);
+    }
+    else {
+        std::cout << '\n';
+    }
+}
+
+
+//TODO: OPEN ISSUE -- formatting of prints; how many digits etc -- also relevant for output files..
 //============================================================================================
 // PRINT_MATRIX
-// Template to print out linear (array/vector) in "matrix" format assuming row first ordering, 
+// Template to print out linear (array/vector) in "matrix" format assuming row first ordering,
 // i.e., A(i,j) corresponds to matrix[i+j*N], where N is the dimension of the matrix.
-// 
+//
 // INPUTS:  matrix -- linear container (array/vector)
 //          lda -- dimension of the matrix
 //============================================================================================
@@ -26,8 +45,58 @@ void print_matrix(T matrix, int lda) {
             std::cout << matrix[j+i*lda] << "\t";
         }
         std::cout << std::endl;
-    } 
+    }
     std::cout << std::endl;
+}
+
+template <typename T>
+void print_2d_vector(std::vector<std::vector<T> > my_vector) {
+    typename std::vector<std::vector<T> >::iterator itr;
+    for (itr = my_vector.begin(); itr != my_vector.end(); ++itr) {
+        typename std::vector<T>::iterator new_itr;
+        for (new_itr = itr->begin(); new_itr != itr->end(); ++new_itr) {
+            std::cout << (*new_itr) << " ";
+        }
+         std::cout << "\n";
+    }
+}
+
+
+/**
+  Write partitions from a container into a file. (Template)
+
+ This functions iterates over a given container and writes the partitions into 
+ a file. Each line stands for one partition, each column stands for one node 
+ with its corresponding community Id.
+
+ */
+template <typename P>
+void partitions_to_file(std::string filename,
+        P & all_partitions) {
+    // init streams
+    std::ofstream partitions_file;
+    partitions_file.open(filename);
+    
+    // iterate over container and write partitions in file
+    for (auto itr = all_partitions.begin();
+        itr != all_partitions.end();++itr) {
+
+        int length = itr->element_count();
+        for (int i = 0; i < length; i++) {
+            partitions_file << itr->find_set(i) << " ";
+        }
+
+        partitions_file << std::endl;
+    }
+    partitions_file.close();
+}
+
+template<typename P>
+void print_partition_list(P &partition) {
+    int length = partition.element_count();
+    for (int i = 0; i < length; i++) {
+        std::cout << i << "->" << partition.find_set(i) << std::endl;
+    }
 }
 
 
@@ -47,7 +116,7 @@ std::vector<double> read_edgelist_weighted(std::string filename) {
 
     // keep track of size of graph and create internal adjacency list
     // NB: Node numbering starts with 0!
-    int max_node_id_seen = -1;    
+    int max_node_id_seen = -1;
     std::vector<int> from, to;
     std::vector<double> weight;
 
@@ -59,12 +128,12 @@ std::vector<double> read_edgelist_weighted(std::string filename) {
         std::getline(lineStream, mystring, ' ');
         int node1_id = atoi(mystring.c_str());
         from.push_back(node1_id);
-        
+
         std::getline(lineStream, mystring, ' ');
         int node2_id = atoi(mystring.c_str());
         to.push_back(node2_id);
 
-        std::getline(lineStream, mystring, ' '); 
+        std::getline(lineStream, mystring, ' ');
         double edge_weight = atof(mystring.c_str());
         weight.push_back(edge_weight);
 
@@ -78,14 +147,14 @@ std::vector<double> read_edgelist_weighted(std::string filename) {
     }
     // don't forget to close file after readout...
     my_file.close();
-    
+
     // now write adjecency matrix in vector form (row first ordering)
     std::vector<double> Adj((max_node_id_seen+1)*(max_node_id_seen+1),0);
-    for (unsigned int i =0; i<to.size(); i++){
+    for (unsigned int i =0; i<to.size(); i++) {
         int index = from[i]*(max_node_id_seen+1)+to[i];
         Adj[index] = weight[i];
     }
-    
+
     return Adj;
 }
 
@@ -105,7 +174,7 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
 
     // define Node class for convenience
     typedef typename G::Node Node;
-    
+
     // keep track of graph size
     // NB: numbering starts with 0!
     int max_node_id_seen = -1;
@@ -124,7 +193,7 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
 
         if (node1_id > max_node_id_seen) {
             int difference = node1_id - max_node_id_seen;
-            for (int i=0;i<difference;++i) {
+            for (int i=0; i<difference; ++i) {
                 graph.addNode();
             }
             max_node_id_seen = node1_id;
@@ -132,7 +201,7 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
 
         if (node2_id > max_node_id_seen) {
             int difference = node2_id - max_node_id_seen;
-            for (int i=0;i<difference;++i) {
+            for (int i=0; i<difference; ++i) {
                 graph.addNode();
             }
             max_node_id_seen = node2_id;
@@ -152,7 +221,7 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
 //TODO WRITE DESCRIPTION
 void write_adj_matrix(std::string filename, std::vector<double> matrix) {
     // initialise input stream and strings for readout
-    std::ofstream my_file(filename.c_str()); 
+    std::ofstream my_file(filename.c_str());
 
     // check if file is open
     if (!my_file.is_open()) {
@@ -166,7 +235,7 @@ void write_adj_matrix(std::string filename, std::vector<double> matrix) {
             my_file << matrix[j+i*lda] << "\t";
         }
         my_file << "\n";
-    } 
+    }
     my_file << "\n";
     my_file.close();
 
@@ -176,7 +245,7 @@ void write_adj_matrix(std::string filename, std::vector<double> matrix) {
 template<typename G, typename E>
 void write_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
     // initialise input stream and strings for readout
-    std::ofstream my_file(filename.c_str()); 
+    std::ofstream my_file(filename.c_str());
     std::string mystring;
 
     // check if file is open
@@ -185,7 +254,7 @@ void write_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
         exit(1);
     }
 
-    for(typename G::EdgeIt e(graph); e!=lemon::INVALID; ++e){
+    for(typename G::EdgeIt e(graph); e!=lemon::INVALID; ++e) {
         int node1 = graph.id(graph.u(e));
         int node2 = graph.id(graph.v(e));
         double weight = weights[e];
