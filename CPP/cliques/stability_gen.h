@@ -1,13 +1,7 @@
 #pragma once
 
 #include <vector>
-//#include <map>
-
-//#include <lemon/list_graph.h>
 #include <lemon/smart_graph.h>
-//#include <lemon/concepts/graph_components.h>
-//#include <lemon/concepts/graph.h>
-//#include <lemon/maps.h>
 
 #include "graphhelpers.h"
 #include "linearised_internals_generic.h"

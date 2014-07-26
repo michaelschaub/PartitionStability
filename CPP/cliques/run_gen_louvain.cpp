@@ -19,10 +19,12 @@ int main(int argc, char *argv []) {
     double current_markov_time = 1;
 
     clq::read_edgelist_weighted_graph(argv[1], input_graph, input_graph_weights);
-
-    std::vector<std::vector<double>> null_model(2,std::vector<double>(6,0));
-    null_model[0] = {2.0, 2.0, 3.0, 3.0 ,2.0, 2.0};
-    null_model[1] = {2.0/14, 2.0/14, 3.0/14, 3.0/14 ,2.0/14, 2.0/14};
+    int num_nodes = lemon::countNodes(input_graph);
+    
+        
+    std::vector<std::vector<double>> null_model =clq::read_null_model(argv[2],num_nodes);
+    //null_model[0] = {2.0, 2.0, 3.0, 3.0 ,2.0, 2.0};
+    //null_model[1] = {2.0/14, 2.0/14, 3.0/14, 3.0/14 ,2.0/14, 2.0/14};
     clq::print_2d_vector(null_model);
 
     partition start_partition(lemon::countNodes(input_graph));

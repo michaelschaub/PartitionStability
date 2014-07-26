@@ -7,6 +7,7 @@
 #include <lemon/core.h>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 namespace clq {
 //Variadic template for generic output ala printf();
@@ -181,8 +182,8 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
 
     //readout contents from my_file into string, line by line
     while (std::getline(my_file, line)) {
-
         std::stringstream lineStream(line);
+
         //readout node id and weights
         std::getline(lineStream, mystring, ' ');
         int node1_id = atoi(mystring.c_str());
@@ -217,6 +218,50 @@ bool read_edgelist_weighted_graph(std::string filename, G &graph, E &weights) {
     my_file.close();
     return true;
 }
+
+//TODO WRITE DESCRIPTION
+std::vector<std::vector<double> > read_null_model(std::string filename, int num_nodes) {
+    // initialise input stream and strings for readout
+    std::ifstream my_file(filename.c_str());
+    std::string line;
+    std::string mystring;
+
+    // check if file is open
+    if (!my_file.is_open()) {
+        std::cout << "couldn't open file:" << filename << std::endl;
+        exit(1);
+    }
+
+    // find number of input vectors and initialise empty null model vectors
+    std::getline(my_file, line);
+    // number of vectors is numbers of spaces + 1...
+    int num_null_vectors = std::count(line.begin(),line.end(),' ') + 1; 
+    clq::output(num_null_vectors);
+    std::vector<std::vector<double>> null_model(num_null_vectors,std::vector<double>(num_nodes,0));
+
+    int j = 0;
+    //readout contents from my_file into string, line by line
+    do {
+        // create stream object of line to loop over
+        std::stringstream lineStream(line);
+        
+        for(int i = 0; i<num_null_vectors; ++i){
+        
+        std::getline(lineStream, mystring, ' ');
+        double null_model_entry = atof(mystring.c_str());
+        null_model[i][j] = null_model_entry;
+        }
+        j=j+1;
+
+    }
+    while (std::getline(my_file, line));
+    // don't forget to close file after readout...
+    my_file.close();
+
+
+    return null_model;
+}
+
 
 //TODO WRITE DESCRIPTION
 void write_adj_matrix(std::string filename, std::vector<double> matrix) {

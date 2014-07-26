@@ -1,11 +1,6 @@
-/* Copyright (c) Z Tavares, M Schaub - zennatavares@gmail.com, 2010-2011 */
 #pragma once
 
-//#include <limits>
 #include <vector>
-//#include <iostream>
-//#include <ctime>
-
 #include <lemon/concepts/graph.h>
 
 #include "graphhelpers.h"
