@@ -99,11 +99,11 @@ The Louvain code was adapted and extended by R. Lambiotte
 function and was subsequently refined further by Antoine Delmotte. 
 
 The MATLAB frontend was initally added by Antoine Delmotte. 
-Version 2.0 which updates the first release and includes the addition of 
-directed stability was created by Michael Schaub. 
 Final adjustments and additions, testing, and maintenance are due to 
 Antoine Delmotte and Michael Schaub.
-
+Version 2.0 which updates the first release and includes the addition of 
+directed stability was created by Michael Schaub (see code history for further
+details). 
 
 ###############################################################################
 
