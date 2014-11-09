@@ -33,11 +33,20 @@ function [S, N, VI, C] = stability(G, T, varargin)
 %                       used to compute the variation of
 %                       information.    
 %
-%        laplacian      Allows to choose which type of      'normalized'
+%        laplacian      Allows to choose which type of     'normalised'
 %                       laplacian should be used to 
 %                       calculate the stability. It can
 %                       either be 'combinatorial', or 
 %                       'normalised'.
+%
+%        directed       activate stability for directed         none
+%                       graphs. Note that transition matrices
+%                       are defined for left multiplications 
+%                       here, i.e. A_ij is the link from i to j.
+%
+%        teleport_tau   teleportation probability               0.15
+%                       (only active if directed == true)
+%
 %
 %        noVI           Disables the calculation of the         none
 %                       robustness of the partitions.
@@ -91,32 +100,13 @@ function [S, N, VI, C] = stability(G, T, varargin)
 %                       file output_'...'.stdout matlab 
 %                       The option 'out' must be on.
 %
+%
 
 
 
-%$%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$%
-%$                                          $%
-%$          Default parameters              $%
-%$                                          $%
-%$%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$%
-
+% Unparsed default parameters
 Graph = [];                                     % List of edges of the graph to be partitioned
 Time = 1;                                       % Markov times at which the graph should be partitioned
-StabilityFunction = @louvain_LNL;    	        % Linearised stability with normalised laplacian is used by default
-ComputeVI = true;                               % True if the variation of information should be computed
-OutputFile = false;                             % No output file by default.
-NbLouvain = 100;                                % Number of louvain optimisations at each Markov time
-NbNodes = 0;                                    % Total number of nodes;
-Full = false;                                   % If true, performs the full stability
-Sanity = true;                                  % If true, performs the graph sanity checks
-Precision = 1e-10;                              % Threshold for stability and edges weigths
-plotStability = false;                          % If true, plots the results of the stability, number of communities and variation of information vs Markov time.           
-verbose = false;                                % Toggles verbose mode
-weighted = 'u';                                 % 'u' for unweighted graph, 'w' for weighted graph
-prefix = '';                                    % Output prefix
-M = 100;                                        % Top M partitions among the L found by louvain are used to compute the variation of information
-ComputeParallel = false;                        % Toggles the computation in parallel
-TextOutput = false;                             % Toggles the computation in parallel
 flag_matlabpool = false;
 
 
@@ -126,33 +116,10 @@ flag_matlabpool = false;
 %$                                          $%
 %$%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$%
 
-% Options
 
-if nargin > 2
-    [StabilityFunction, ComputeVI, OutputFile, prefix, NbLouvain, M, Full, Sanity, Precision, plotStability, verbose, ComputeParallel, TextOutput] = parseinput(length(varargin),G,varargin);
-end
 
-% Display starting time
-if verbose
-    c = clock;
-    disp(' ');
-    disp(['   Stability will be computed with the following parameters:']);
-    disp(' ');
-    if Full; disp('      - Full Stability'); else disp('      - Linearised Stability'); end
-    if strfind(func2str(StabilityFunction), 'N'); disp(['      - Normalised laplacian']); else disp(['      - Combinatorial laplacian']); end
-    if ComputeVI; disp(['      - Computation of the variation of information (VI): Yes']); else disp(['      - Computation of the variation of information: No']); end
-    if OutputFile; disp(['      - Save the results in a file: Yes ' prefix]); else disp(['      - Save the results in a file: No']); end
-    if OutputFile; disp(['      - Saved file prefix: ' prefix]); end
-    if Sanity; disp(['      - Check the input graph: Yes']); else disp(['      - Check the input graph: No']); end
-    if plotStability; disp(['      - Plot the results: Yes']); else disp(['      - Plot the results: No']); end
-    if verbose; disp(['      - Verbose mode: Yes']);    else disp(['      - Verbose mode: No']);    end
-    if ComputeParallel; disp(['      - Parallel computation: Yes']); else disp(['      - Parallel computation: No']); end
-    disp(['      - Number of Louvain iterations: ' int2str(NbLouvain)]);
-    disp(['      - Number of Louvain iterations used for the computation of VI: ' int2str(M)]);
-    disp(['      - Precision used: ' num2str(Precision)]); 
-    disp(' ');
-    tstart=tic;
-end
+[StabilityFunction, OutputFile, prefix, Full, Sanity, plotStability, verbose, TextOutput, PARAMS] = parseinput(length(varargin),G,varargin);
+
 
 
 % Argument 1: G
@@ -163,7 +130,7 @@ if nargin > 0
     end
     % Check if the graph is correctly encoded
     if Sanity
-        G=check(G, verbose);
+        G=check(G, verbose, PARAMS);
     end
     % If the full stability is to be computed, Graph should be the
     % adjacency matrix.
@@ -179,35 +146,24 @@ if nargin > 0
         else
             Graph = sparse(G);
         end
-        if max(max(Graph)) == 1 && isinteger(Graph)
-            weighted='u';
-        else
-            weighted='w';
-        end
-        NbNodes = size(Graph,2);
+        PARAMS.NbNodes = size(Graph,2);
     % if the linearised stability is to be computed, Graph should be the
     % list of edges.
     else
         if size(G,1) == size(G,2)
-            [rows,cols,vals] = find(G);
+            [rows,cols,vals] = find(G');
             if sum(vals)==length(vals)
-                Graph=[cols-1, rows-1];
-                weighted='u';
+                Graph=[cols-1, rows-1 ones(size(cols))];
             else
                 Graph=[cols-1, rows-1, vals];
-                weighted='w';
             end
             clear rows cols vals;
-        elseif size(G,2)==2 
-            Graph=G;
-            weighted='u';
         elseif size(G,2)==3
             Graph=G;
-            weighted='w';
         else
             error('Wrong size for G: G should be a graph saved either as a list of edges (size(G)=[N,3] if weighted, size(G)=[N,2] if unweighted) or as an adjacency matrix (size(G)=[N,N])');
         end
-        NbNodes = max(Graph(:,1))+1;
+        PARAMS.NbNodes = max(Graph(:,1))+1;
     end
 else
     error('Please provide at least the graph to be partitioned. Type "help stability" for more information.');
@@ -219,13 +175,13 @@ if nargin > 1
     if (isvector(T) && isnumeric(T))
         Time=T;
     else
-        error('The second argument should be a vector. Type "help stability" for more information.');
+        error('The second argument should be a numerical vector. Type "help stability" for more information.');
     end
 end
 
 % Parallel computation: Initialize the number of cores if matlabpool is not
 % yet running.
-if ComputeParallel && matlabpool('size') == 0
+if PARAMS.ComputeParallel && (matlabpool('size') == 0)
     flag_matlabpool = true;
     matlabpool
 end
@@ -236,11 +192,24 @@ end
 %$                                          $%
 %$%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$%
 
-% Display starting time
 if verbose
     c = clock;
     disp(' ');
-    disp(['   Partitioning of the graph started at ' datestr([2011 1 1 c(4) c(5) c(6)], 'HH:MM:SS')]);
+    disp(['   Stability will be computed with the following parameters:']);
+    disp(' ');
+    if Full; disp('      - Full Stability'); else disp('      - Linearised Stability'); end
+    if strfind(func2str(StabilityFunction), 'N'); disp(['      - Normalised laplacian']); else disp(['      - Combinatorial laplacian']); end
+    if PARAMS.directed; disp(['      - DIRECTED graph; teleportation parameter set to ' num2str(PARAMS.teleport_tau)]); end
+    if PARAMS.ComputeVI; disp(['      - Computation of the variation of information (VI): Yes']); else disp(['      - Computation of the variation of information: No']); end
+    if OutputFile; disp(['      - Save the results in a file: Yes ' prefix]); else disp(['      - Save the results in a file: No']); end
+    if OutputFile; disp(['      - Saved file prefix: ' prefix]); end
+    if Sanity; disp(['      - Check the input graph: Yes']); else disp(['      - Check the input graph: No']); end
+    if plotStability; disp(['      - Plot the results: Yes']); else disp(['      - Plot the results: No']); end
+    if verbose; disp(['      - Verbose mode: Yes']);    else disp(['      - Verbose mode: No']);    end
+    if PARAMS.ComputeParallel; disp(['      - Parallel computation: Yes']); else disp(['      - Parallel computation: No']); end
+    disp(['      - Number of Louvain iterations: ' int2str(PARAMS.NbLouvain)]);
+    disp(['      - Number of Louvain iterations used for the computation of VI: ' int2str(PARAMS.M)]);
+    disp(['      - Precision used: ' num2str(PARAMS.Precision)]); 
     disp(' ');
     tstart=tic;
 end
@@ -250,7 +219,7 @@ end
 S = zeros(1, length(Time));
 N = zeros(1, length(Time));
 VI = zeros(1, length(Time));
-C = zeros(NbNodes, length(Time));
+C = zeros(PARAMS.NbNodes, length(Time));
 
 if TextOutput
     mkdir(['Partitions_' prefix]);
@@ -268,6 +237,7 @@ if verbose
     step_prec=0;
 end
 
+
 % Loop over all Markov times
 for t=1:length(Time)
 
@@ -275,15 +245,22 @@ for t=1:length(Time)
         disp(['   Partitioning for Markov time = ' num2str(Time(t),'%10.6f') '...']);
     end
     
-    [S(t), N(t), C(:,t), VI(t)] = StabilityFunction(Graph, Time(t), Precision, weighted, ComputeVI, NbLouvain, M, NbNodes, ComputeParallel);
+    
+    
+    [S(t), N(t), C(:,t), VI(t) VAROUT] = StabilityFunction(Graph, Time(t), PARAMS);
+    if isfield(VAROUT,'precomputed')
+        PARAMS.precomputed = VAROUT.precomputed;
+        PARAMS.pi = VAROUT.pi;
+        PARAMS.P = VAROUT.P;
+    end
     
     if plotStability && t>1
-        stability_plot(Time,t,S,N,VI,ComputeVI,figure_handle);
+        stability_plot(Time,t,S,N,VI,PARAMS.ComputeVI,figure_handle);
     end
     
     if TextOutput
         cd(['Partitions_' prefix]);
-        dlmwrite(['Partition_' prefix '_' num2str(Time(t),'%10.6f') '.dat'],[[1:NbNodes]',C(:,t)],'delimiter','\t');
+        dlmwrite(['Partition_' prefix '_' num2str(Time(t),'%10.6f') '.dat'],[[1:PARAMS.NbNodes]',C(:,t)],'delimiter','\t');
         cd ..;        
         dlmwrite(['Stability_' prefix '.stdout'],[Time(t), S(t), N(t), VI(t)],'-append', 'delimiter','\t')
     end   
@@ -332,34 +309,49 @@ end
 end
 
 %------------------------------------------------------------------------------
-function [StabilityFunction, ComputeVI, OutputFile, prefix, NbLouvain, M, Full, Sanity, Precision, plotStability, verbose, ComputeParallel, TextOutput] = parseinput(options,G,varargin)
-% Parse the options
+function [StabilityFunction, OutputFile, prefix, Full, Sanity, plotStability, verbose, TextOutput,PARAMS] = parseinput(options,G,varargin)
+% Parse the options from the command line
 
-% Initialise parameters
+%$%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$%
+%$                                          $%
+%$          Default parameters              $%
+%$                                          $%
+%$%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$%
 
-% if (size(G,1) == size(G,2) && nnz(G)<5000 && size(G,1)<1000) || (size(G,1) ~= size(G,2) && size(G,1)<5000 && max(max(G(:,1:2)))<1000)
-%     StabilityFunction = @louvain_FNL;     % Linearised stability with normalised laplacian is used by default
-% else
-%     StabilityFunction = @louvain_LNL;     % Linearised stability with normalised laplacian is used by default
-% end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% "Global" options relevant for output and control flow
 
 stability_type_specified=false;
 threshold_nnodes_full = 1000;
 threshold_nedges_full = 5000;
-ComputeVI = true;                               % True if the variation of information should be computed
+
 OutputFile = false;                             % No output file by default.
-NbLouvain = 100;                                % Number of louvain optimisations at each Markov time
-Full = false;
-Laplacian = 'Normalised';
-Sanity = true;
-Precision = 1e-10; 
-plotStability = false; 
-verbose = false;
-M = 100;
-prefix = '';
-ComputeParallel = false;
-TextOutput = false;
-attributes={'novi', 'l', 'm', 'out', 'full', 'linearised', 'nocheck', 'laplacian', 'prec', 'plot','v','t','p'};
+
+Laplacian = 'Normalised';                       % Default Laplacian
+Full = false;                                    % If true, performs the full stability
+Sanity = true;                                  % If true, performs the graph sanity checks
+plotStability = false;                          % If true, plots the results of the stability, number of communities and variation of information vs Markov time.           
+verbose = false;                                % Toggle verbose mode
+prefix = '';                                    % Output prefix
+TextOutput = false;                             % Toggles the text output
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Options stored in struct relevant for optimization etc.
+PARAMS = struct;                                % create empty structure for storing parameters
+PARAMS.precomputed = false;                     % Flag for precomputed transition matrix + stationary distribution
+PARAMS.directed = false;                        % enables dealing with directed graphs
+PARAMS.ComputeVI = true;                        % True if the variation of information should be computed
+PARAMS.ComputeES = false;                       % True if edge statistics should be computed
+PARAMS.ComputeParallel = false;                 % Toggles the computation in parallel
+PARAMS.NbLouvain = 100;                         % Number of louvain optimisations at each Markov time
+PARAMS.NbNodes = 0;                             % Total number of nodes;
+PARAMS.Precision = 1e-9;                        % Threshold for stability and edges weigths
+PARAMS.M = 100;                                 % Top M partitions among the L found by louvain are used to compute the variation of information
+PARAMS.K = NaN;                                 % K stabilities value, only relevant for Ruelle random walk and k stabilities. K =-1 corresponds to the normalised Laplacian
+PARAMS.teleport_tau = 0.15;                     % teleportation probability (only relevant for directed graphs)
+
+% actual parsing begins here
+attributes={'novi', 'l', 'm', 'out', 'full','linearised', 'nocheck', 'laplacian', 'prec', 'plot','v','t','p','k','directed','teleport','precomputed'};
 
 if options > 0
     
@@ -384,23 +376,29 @@ if options > 0
                 stability_type_specified=true;
                 Full = false;
                 i = i+1;
+            elseif strcmpi(varargin{i},'directed')
+                PARAMS.directed = true;
+                i = i+1;
             elseif strcmpi(varargin{i},'novi')
-                ComputeVI = false;
+                PARAMS.ComputeVI = false;
                 i = i+1;
             elseif strcmpi(varargin{i},'nocheck')
                 Sanity = false;
                 i = i+1;
             elseif strcmpi(varargin{i},'plot')
-                plotStability = true; 
+                plotStability = true;
                 i = i+1;
             elseif strcmpi(varargin{i},'v')
                 verbose = true;
                 i = i+1;
+            elseif strcmpi(varargin{i},'precomputed')
+                PARAMS.precomputed = true;
+                i = i+1;
             elseif strcmpi(varargin{i},'p')
                 if exist('matlabpool','file')
-                    ComputeParallel = true;
+                    PARAMS.ComputeParallel = true;
                 else
-                    ComputeParallel = false;
+                    PARAMS.ComputeParallel = false;
                     warning('The Parallel Computing Toolbox of Matlab does not appear to be installed. Defaulting to single node computation...');
                 end
                 i = i+1;
@@ -422,16 +420,24 @@ if options > 0
                     end
                 elseif strcmpi(varargin{i},'l')
                     if isnumeric(varargin{i+1})
-                        NbLouvain = round(varargin{i+1});
-                        M = round(varargin{i+1});
+                        PARAMS.NbLouvain = round(varargin{i+1});
+                        PARAMS.M = round(varargin{i+1});
                     end
                 elseif strcmpi(varargin{i},'prec')
                     if isnumeric(varargin{i+1})
-                        Precision = varargin{i+1};
+                        PARAMS.Precision = varargin{i+1};
                     end
                 elseif strcmpi(varargin{i},'m')
                     if isnumeric(varargin{i+1})
-                        M = varargin{i+1};
+                        PARAMS.M = varargin{i+1};
+                    end
+                elseif strcmpi(varargin{i},'k')
+                    if isnumeric(varargin{i+1})
+                        PARAMS.K = varargin{i+1};
+                    end
+                elseif strcmpi(varargin{i},'teleport')
+                    if isnumeric(varargin{i+1})
+                        PARAMS.teleport_tau = varargin{i+1};
                     end
                 elseif strcmpi(varargin{i},'out')
                     if ischar(varargin{i+1})
@@ -506,42 +512,106 @@ else
     end
 end
 
+end
 
+%--------------------------------------------------------------------------
+function shares = split_even(N,nr_threads)
+%Function to compute an even split of N runs between t threads 
+shares = ones(1,nr_threads)*floor(N/nr_threads);
+shares(1) = shares(1)+ rem(N,nr_threads);
 end
 
 %------------------------------------------------------------------------------
-function [S, N, C, VI] = louvain_FNL(Graph, time, precision, weighted, ComputeVI, NbLouvain, M, NbNodes, ComputeParallel)
+function [S, N, C, VI, VAROUT] = louvain_FNL(Graph, time, PARAMS)
 % Computes the full normalised stabilty
 
-% Generate the matrix exponential
-diagdeg=sparse((diag(sum(Graph)))/sum(sum(Graph)));  %diag matrix with stat distr
-trans=sparse(diag(    (sum(Graph)).^(-1)     ) * Graph);  %(stochastic) transition matrix
-clear Graph;
-Lap=sparse(trans-eye(NbNodes));
-clear trans;
-exponential=sparse(expm(time.*Lap));
-clear Lap;
-solution=sparse(diagdeg*exponential);
-clear exponential;
-clear diagdeg;
-solution=max(max(solution))*precision*round(solution/(max(max(solution))*precision));
-clear exponential;
-clear diagdeg;
+VAROUT =[]; % init varying outputs 
+
+% "transition matrix" and pi unknown
+if PARAMS.precomputed == false
+    % directed case: M_ij >> from i to j
+    if PARAMS.directed == true
+        dout = sum(Graph,2);
+        dangling = (dout==0);
+        dout(dangling) = 1;
+        Dout = sparse(diag(dout));
+        clear dout;
+        M = (1-PARAMS.teleport_tau)*(Dout\Graph); % deterministic part of transition
+        % teleportation according to arXiv:0812.1770
+        M =	M + diag(PARAMS.teleport_tau + dangling.*(1-PARAMS.teleport_tau))...
+            * ones(PARAMS.NbNodes)/PARAMS.NbNodes;
+        
+        clear Dout dangling
+        [v lambda_all] = eigs(M'); % largest eigenvalue of transition matrix corresponds to stat.distribution.
+        lambda = max(diag(lambda_all));
+        v = v(:,diag(lambda_all) == lambda);
+        v = abs(v);              % make sure eigenvector is positive
+        clear lambda;
+        % store results for future use
+        VAROUT.precomputed = true;
+        VAROUT.pi = v/sum(v);
+        VAROUT.P = M;      
+        % now compute exponential transition matrix
+        solution = diag(v/sum(v))*expm(time* (M-eye(size(M))) );
+        clear M v;
+        % symmetrize solution
+        solution = (solution+solution')/2;
+        
+        
+        % undirected case
+    else
+        % Generate the matrix exponential
+        trans=sparse(diag(    (sum(Graph)).^(-1)     ) * Graph);  %(stochastic) transition matrix        
+        Lap=sparse(trans-eye(PARAMS.NbNodes));
+        % store results for future use
+        VAROUT.precomputed = true;
+        VAROUT.P = trans;
+        
+        clear trans;
+        exponential=expm(time.*Lap);
+        clear Lap;
+        
+        PI=sparse((diag(sum(Graph)))/sum(sum(Graph)));  %diag matrix with stat distr   
+        VAROUT.pi = diag(PI);   % store results for future use
+        
+        solution=sparse(PI*exponential);
+        clear exponential;
+        clear PI;
+        
+        
+    end
+    
+    % stationary distribution and "transition matrix" have been computed before
+else
+    if PARAMS.directed == true
+        solution = diag(PARAMS.pi)*expm(time* (PARAMS.P - eye(size(PARAMS.P))) );
+        solution = (solution +solution')/2; % symetrization needed for directed case
+    else
+        solution = diag(PARAMS.pi)*expm(time* (PARAMS.P - eye(size(PARAMS.P))) );
+    end
+end
+
+
+
+% prune out weights that are too small as defined by precision
+solution=max(max(solution))*PARAMS.Precision*round(solution/(max(max(solution))*PARAMS.Precision));
 [row,col,val] = find(solution);
 clear solution
 graph=[col-1,row-1,val];
+weighted = 'w';
 
 % Optimize louvain NbLouvain times
-lnk = zeros(NbNodes, NbLouvain);
-lnkS = zeros(NbLouvain,1);
-if ComputeParallel
-    parfor l=1:NbLouvain
-	[stability, nb_comm, communities] = stability_louvain_LNL(graph, 1, precision, weighted);
+lnk = zeros(PARAMS.NbNodes, PARAMS.NbLouvain);
+lnkS = zeros(PARAMS.NbLouvain,1);
+precision = PARAMS.Precision;
+if PARAMS.ComputeParallel
+    parfor l=1:PARAMS.NbLouvain
+        [stability, nb_comm, communities] = stability_louvain_LNL(graph, 1, precision, weighted);
         lnk(:,l) = communities;
         lnkS(l) = stability;
     end
 else
-    for l=1:NbLouvain
+    for l=1:PARAMS.NbLouvain
         [stability, nb_comm, communities] = stability_louvain_LNL(graph, 1, precision, weighted);
         lnk(:,l) = communities;
         lnkS(l) = stability;
@@ -554,49 +624,93 @@ N=max(C)+1;
 clear communities;
 clear graph;
 
+ComputeVI = PARAMS.ComputeVI;
+NbLouvain = PARAMS.NbLouvain;
+NbNodes = PARAMS.NbNodes;
+M = PARAMS.M ;
+
 if ComputeVI && nnz(max(lnk)==NbNodes-1)~=NbLouvain && nnz(max(lnk)==0)~=NbLouvain
-     VI = computeRobustness(lnk, lnkS, M, ComputeParallel);
+     VI = computeRobustness(lnk, lnkS, M, PARAMS.ComputeParallel);
 else
-    VI=0;
+    VI = 0;
 end
 
 clear lnk;
 
 end
 
-
 %------------------------------------------------------------------------------
-function [S, N, C, VI] = louvain_FCL(Graph, time, precision, weighted, ComputeVI, NbLouvain, M, NbNodes, ComputeParallel)
+function [S, N, C, VI, VAROUT] = louvain_FCL(Graph, time, PARAMS)
 % Computes the full combinatorial stability
 
-% Generate the matrix exponential
-diagdeg=sparse(1/NbNodes .* eye(NbNodes));
-Lap=sparse(Graph-diag(sum(Graph)));
-total=sum(sum(Graph));
-clear Graph;
-avdegree=total/NbNodes;
-exponential=sparse(expm((time/avdegree).*Lap));
-clear Lap;
-solution=sparse(diagdeg*exponential);
-solution=max(max(solution))*precision*round(solution/(max(max(solution))*precision));
-clear exponential;
-clear diagdeg;
+VAROUT =[]; % init varying outputs 
+
+ComputeVI = PARAMS.ComputeVI;
+precision = PARAMS.Precision;
+NbLouvain = PARAMS.NbLouvain;
+
+
+
+% "transition matrix" and pi unknown
+if PARAMS.precomputed == false
+    % directed case: M_ij >> from i to j
+    if PARAMS.directed == true
+        % Directed part so far not implemented, different variants are possible
+        error(['This parameter combination is not allowed! If you want to use directed stability, use the normalised Laplacian']);        
+        % undirected case
+    else
+        % standard Laplacian and average degree
+        av_degree = sum(sum(Graph))/PARAMS.NbNodes;
+        Lap=  -(Graph-diag(sum(Graph)));
+        % store results for future use
+        VAROUT.precomputed = true;
+        VAROUT.P = Lap/av_degree;
+        
+ 
+        % Generate the matrix exponential
+        exponential=sparse(expm(-time.*Lap/av_degree));
+        clear Lap;
+        
+        PI=sparse(eye(PARAMS.NbNodes)/PARAMS.NbNodes);  %diag matrix with stat distr   
+        VAROUT.pi = diag(PI);   % store results for future use
+        
+        solution=sparse(PI*exponential);
+        clear exponential;
+        clear PI;
+        
+        
+    end
+    
+    % stationary distribution and "transition matrix" have been computed before
+else
+    if PARAMS.directed == true
+        solution = diag(PARAMS.pi)*expm(-time* PARAMS.P);
+        solution = (solution +solution')/2; % symetrization needed for directed case
+    else
+        solution = diag(PARAMS.pi)*expm(-time* PARAMS.P);
+    end
+end
+
+
+
+% prune out weights that are too small as defined by precision
+solution=max(max(solution))*PARAMS.Precision*round(solution/(max(max(solution))*PARAMS.Precision));
 [row,col,val] = find(solution);
 clear solution
 graph=[col-1,row-1,val];
 
-
 % Optimize louvain NbLouvain times
-lnk = zeros(NbNodes, NbLouvain);
-lnkS = zeros(NbLouvain,1);
-if ComputeParallel
-    parfor l=1:NbLouvain
+lnk = zeros(PARAMS.NbNodes, PARAMS.NbLouvain);
+lnkS = zeros(PARAMS.NbLouvain,1);
+precision = PARAMS.Precision;
+if PARAMS.ComputeParallel
+    parfor l=1:PARAMS.NbLouvain
         [stability, nb_comm, communities] = stability_louvain_LNL(graph, 1, precision, weighted);
         lnk(:,l) = communities;
         lnkS(l) = stability;
     end
 else
-    for l=1:NbLouvain
+    for l=1:PARAMS.NbLouvain
         [stability, nb_comm, communities] = stability_louvain_LNL(graph, 1, precision, weighted);
         lnk(:,l) = communities;
         lnkS(l) = stability;
@@ -609,8 +723,13 @@ N=max(C)+1;
 clear communities;
 clear graph;
 
+ComputeVI = PARAMS.ComputeVI;
+NbLouvain = PARAMS.NbLouvain;
+NbNodes = PARAMS.NbNodes;
+M = PARAMS.M ;
+
 if ComputeVI && nnz(max(lnk)==NbNodes-1)~=NbLouvain && nnz(max(lnk)==0)~=NbLouvain
-     VI = computeRobustness(lnk, lnkS, M, ComputeParallel);
+     VI = computeRobustness(lnk, lnkS, M, PARAMS.ComputeParallel);
 else
     VI = 0;
 end
@@ -620,8 +739,22 @@ clear lnk;
 end
 
 %------------------------------------------------------------------------------
-function [S, N, C, VI] = louvain_LCL(Graph, time, precision, weighted, ComputeVI, NbLouvain, M, NbNodes, ComputeParallel)
+function [S, N, C, VI, VAROUT] = louvain_LCL(Graph, time, PARAMS)
+VAROUT =[]; % init varying outputs 
 
+if PARAMS.directed == true
+        % Directed part so far not implemented, different variants are possible
+        error(['This parameter combination is not allowed! If you want to use directed stability, use the normalised Laplacian']);
+end
+
+
+ComputeVI = PARAMS.ComputeVI  ;
+precision = PARAMS.Precision;
+NbLouvain = PARAMS.NbLouvain;
+M = PARAMS.M ;
+NbNodes = PARAMS.NbNodes;
+ComputeParallel = PARAMS.ComputeParallel;
+weighted = 'w';
 
 % Optimize louvain NbLouvain times
 lnk = zeros(NbNodes, NbLouvain);
@@ -647,7 +780,7 @@ clear communities;
 clear Graph;
 
 if ComputeVI && nnz(max(lnk)==NbNodes-1)~=NbLouvain && nnz(max(lnk)==0)~=NbLouvain
-     VI = computeRobustness(lnk, lnkS, M, ComputeParallel);
+     VI = computeRobustness(lnk, lnkS, M,ComputeParallel);
 else
     VI = 0;
 end
@@ -656,20 +789,63 @@ clear lnk;
 
 end
 %------------------------------------------------------------------------------
-function [S, N, C, VI] = louvain_LNL(Graph, time, precision, weighted, ComputeVI, NbLouvain, M, NbNodes, ComputeParallel)
+function [S, N, C, VI, VAROUT] = louvain_LNL(Graph, time, PARAMS)
+VAROUT =[]; % init varying outputs 
+
+weighted = 'w';
+
+
+% directed case: M_ij >> from i to j
+if PARAMS.directed == true
+    Graph = sparse(Graph(:,1)+1,Graph(:,2)+1,Graph(:,3),PARAMS.NbNodes,PARAMS.NbNodes);
+    % "transition matrix" and pi unknown
+    if PARAMS.precomputed == false
+        dout = sum(Graph,2);
+        dangling = (dout==0);
+        dout(dangling) = 1;
+        Dout = sparse(diag(dout));
+        clear dout;
+        M = (1-PARAMS.teleport_tau)*(Dout\Graph); % deterministic part of transition
+        % teleportation according to arXiv:0812.1770
+        M =	M + diag(PARAMS.teleport_tau + dangling.*(1-PARAMS.teleport_tau))...
+            * ones(PARAMS.NbNodes)/PARAMS.NbNodes;
+        
+        clear Dout dangling
+        [v lambda_all] = eigs(M'); % largest eigenvalue of transition matrix corresponds to stat.distribution.
+        lambda = max(diag(lambda_all));
+        v = v(:,diag(lambda_all) == lambda);
+        v = abs(v);              % make sure eigenvector is positive
+        clear lambda;
+        % store results for future use
+        VAROUT.precomputed = true;
+        VAROUT.pi = v/sum(v);
+        VAROUT.P = M;        
+        %symmetrise due to trace optimsation
+        solution = diag(VAROUT.pi)*M;
+        solution = (solution +solution')/2;
+    else
+        solution = diag(PARAMS.pi)* PARAMS.P;
+        solution = (solution +solution')/2;
+    end
+    [row,col,val] = find(solution);
+    clear solution
+    Graph = [col-1,row-1,val];   
+end
+
+
 
 % Optimize louvain NbLouvain times
-lnk = zeros(NbNodes, NbLouvain);
-lnkS = zeros(NbLouvain,1);
-if ComputeParallel
-    parfor l=1:NbLouvain
-        [stability, nb_comm, communities] = stability_louvain_LNL(Graph, time, precision, weighted);
+lnk = zeros(PARAMS.NbNodes, PARAMS.NbLouvain);
+lnkS = zeros(PARAMS.NbLouvain,1);
+if PARAMS.ComputeParallel
+    parfor l=1:PARAMS.NbLouvain
+        [stability, ~, communities] = stability_louvain_LNL(Graph, time, PARAMS.Precision, weighted);
         lnk(:,l) = communities;
         lnkS(l) = stability;
     end
 else
-    for l=1:NbLouvain
-        [stability, nb_comm, communities] = stability_louvain_LNL(Graph, time, precision, weighted);
+    for l=1:PARAMS.NbLouvain
+        [stability, ~, communities] = stability_louvain_LNL(Graph, time, PARAMS.Precision, weighted);
         lnk(:,l) = communities;
         lnkS(l) = stability;
     end
@@ -681,8 +857,9 @@ N=max(C)+1;
 clear communities;
 clear Graph;
 
-if ComputeVI && nnz(max(lnk)==NbNodes-1)~=NbLouvain && nnz(max(lnk)==0)~=NbLouvain
-    VI = computeRobustness(lnk,lnkS, M, ComputeParallel);
+if PARAMS.ComputeVI && nnz(max(lnk)==PARAMS.NbNodes-1)~=PARAMS.NbLouvain...
+        && nnz(max(lnk)==0)~=PARAMS.NbLouvain
+    VI = computeRobustness(lnk,lnkS, PARAMS.M,PARAMS.ComputeParallel);
 else
     VI = 0;
 end
@@ -691,7 +868,7 @@ clear lnk;
 
 end
 %------------------------------------------------------------------------------
-function Graph = check(Graph, verbose)
+function Graph = check(Graph, verbose, PARAMS)
 % Check that the graph is properly encoded.
     if verbose
         disp(' ');
@@ -731,24 +908,26 @@ function Graph = check(Graph, verbose)
         end
     end
 
-    % Check for NaN's
-    if any(any(isnan(Graph)))
-	error('The graph provided contains elements which are not numbers (NaN). Please check your graph, and try again.');
+    % Check that graph contains just numbers
+    if any(any(~isnumeric(Graph)))
+	error('The graph provided contains elements which are not numbers (isnumeric == false). Please check your graph, and try again.');
     end
         
-    % Check symmetry of the adjacency matrix
-    if size(Graph,1) ~= size(Graph,2)
-        error('The graph provided is a directed graph. This program only deals with undirected graphs.');
+    % Check symmetry of the adjacency matrix if graph is not directed
+    if PARAMS.directed == false
+    	if size(Graph,1) ~= size(Graph,2)
+        	error('The graph provided is a directed graph. Specify the correct options or correct your graph');
+    	end
+	if any(any(Graph~=Graph'))
+		if nnz(triu(Graph,1))>0 && nnz(tril(Graph,-1))>0
+		    error('The graph provided is a directed graph.');
+		else
+		    warning('Adjacency matrix A of provided graph is triangular -- symmetrizing A = A + A^T');
+		    Graph=Graph+Graph';
+		end
+	end
     end
-    if any(any(Graph~=Graph'))
-        if nnz(triu(Graph,1))>0 && nnz(tril(Graph,-1))>0
-            error('The graph provided is a directed graph. This program only deals with undirected graphs.');
-        else
-            warning('Adjacency matrix A of provided graph is triangular -- symmetrizing A = A + A^T');
-            Graph=Graph+Graph';
-        end
-    end
-    
+
     % Check for isolated nodes
     if nnz(sum(Graph))~=size(Graph,2)
         warning('There are isolated nodes in the graph');
@@ -756,9 +935,9 @@ function Graph = check(Graph, verbose)
     
     % Check for disconnected components
     if exist('graphconncomp','file') == 2
-        nbcomp=graphconncomp(sparse(Graph));
+        nbcomp=graphconncomp(sparse(Graph),'WEAK',true);
         if nbcomp>1
-            warning(['There are ' num2str(nbcomp) ' disconnected components in the graph.']);
+            warning(['There are ' num2str(nbcomp) ' not strongly connected components in the graph. If your graph is directed please be aware of the teleportation settings.']);
         end
     end
     
@@ -775,14 +954,15 @@ function Graph = check(Graph, verbose)
     end
 end
 %------------------------------------------------------------------------------
-function VI = computeRobustness(lnk, lnkS, M, ComputeParallel)
+function VI = computeRobustness(lnk, lnkS, M,ComputeParallel)
 
-[i,i] = sort(lnkS);
+% Parameter
+
+[~,i] = sort(lnkS);
 lnk=lnk(:,i);
 lnk=lnk(:,end-M+1:end);
 VI = varinfo(lnk',ComputeParallel);
 clear i;
-
 end
 
 %------------------------------------------------------------------------------
