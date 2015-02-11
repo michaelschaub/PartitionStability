@@ -698,6 +698,7 @@ solution=max(max(solution))*PARAMS.Precision*round(solution/(max(max(solution))*
 [row,col,val] = find(solution);
 clear solution
 graph=[col-1,row-1,val];
+weighted='w';
 
 % Optimize louvain NbLouvain times
 lnk = zeros(PARAMS.NbNodes, PARAMS.NbLouvain);
