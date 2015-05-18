@@ -35,7 +35,7 @@
 #endif
 
 #ifdef __MAC__
-#include "/usr/include/sys/malloc.h"
+#include <malloc/malloc.h>
 #endif
 
 #define WEIGHTED   0
