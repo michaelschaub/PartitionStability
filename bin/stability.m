@@ -928,10 +928,10 @@ function Graph = check(Graph, verbose, PARAMS)
 		end
 	end
     end
-
+    
     % Check for isolated nodes
-    if nnz(sum(Graph))~=size(Graph,2)
-        warning('There are isolated nodes in the graph');
+    if ( any( sum(abs(Graph))' == 0 & sum(abs(Graph),2) == 0 ) )
+        warning('There are isolated nodes in the graph!?');
     end
     
     % Check for disconnected components
