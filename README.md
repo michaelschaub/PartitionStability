@@ -1,4 +1,4 @@
-###############################################################################
+###############################################################################  
 Copyright (C) 2012 A. Delmotte, M. Schaub, S. Yaliraki, M. Barahona
 
 This program is free software: you can redistribute it and/or modify
