@@ -78,6 +78,11 @@ For detailed instructions on how to compile the code in MATLAB see below.
 If you find a bug or have further comments, please send an email and if 
 necessary the input file and the parameters that caused the error.
 
+NOTE: A different, somewhat more flexible backend for generalized Louvain 
+optimization is also available from  
+https://github.com/michaelschaub/generalizedLouvain
+
+
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Authors   : A. Delmotte and M. Schaub  
 Email     : antoine.delmotte09@imperial.ac.uk, michael.schaub09@imperial.ac.uk  
